@@ -1,0 +1,285 @@
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../fonts/Montserrat/Montserrat-VariableFont_wght.ttf');
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf');
+    font-style: italic;
+}
+
+body {
+    margin: 0;
+    background-color: #EFEFEF;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+}
+
+.side-nav {
+    height: 100%;
+    width: 0;
+    padding-top: 1rem !important;
+    box-sizing: border-box;
+    position: fixed;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    background-color: #1F1F1F;
+    overflow-x: hidden;
+    transition: width 0.5s, padding 0.5s;
+}
+
+.side-nav > a {
+    display: block;
+    text-decoration: none;
+    color: #AFAFAF;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    margin-left: 0.2rem;
+    transition: color 0.25s;
+}
+
+.side-nav a, .side-nav section, .side-nav span, .header {
+    white-space: nowrap;
+}
+
+.nav-header-section {
+    display: flex;
+    margin-top: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.side-nav > hr {
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.nav-header {
+    font-weight: bold;
+    color: #EFEFEF;
+}
+
+.closebtn {
+    display: inline-block;
+    margin-left: auto;
+    text-decoration: none;
+    color: #AFAFAF;
+    transition: color 0.25s;
+    position: relative;
+    bottom: 1px;
+}
+
+.side-nav > a:hover, closebtn:hover {
+    color: #EFEFEF;
+}
+
+.main {
+    transition: margin-left 0.5s;
+}
+
+.header {
+    background-color: #00304F;
+    display: flex;
+    padding: 1rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    color: white;
+}
+
+.header span {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.title {
+    font-weight: bold;
+    margin-left: 1em;
+}
+
+.btn {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    min-width: 1rem;
+    text-align: center;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    position: relative;
+    cursor: pointer;
+}
+
+.btn span {
+    padding-left: 0.5em;
+    vertical-align: middle;
+}
+
+.btn img {
+    vertical-align: middle;
+    position: relative;
+}
+
+.main-content {
+    box-sizing: border-box;
+    padding: 1rem;
+}
+
+.test-bounds {
+    background-color: #FFFF00AF;
+}
+
+.record-period-section {
+    display: flex;
+    vertical-align: middle;
+    margin: 0.2rem;
+}
+
+.period-time > span {
+    display: inline-block;
+    margin-right: 1rem;
+}
+
+select, input {
+    font-family: 'Montserrat';
+    font-size: 1.0rem;
+}
+
+.period-selector {
+    font-size: 0.85em;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    margin-left: 2rem;
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    background-color: #CFCFCF;
+    font-weight: bold;
+    border-radius: 1em;
+}
+
+.period-selector > span {
+    display: inline-block;
+    border-radius: 0.85em;
+    padding-left: 2em;
+    padding-right: 2em;
+    margin: 0.2em;
+}
+
+.period-selector > .selected {
+    background-color: #7F7F7F;
+    color: white;
+}
+
+.period-display {
+    display: inline-block;
+    margin-left: 2rem;
+    margin-right: 2rem;
+    position: relative;
+    top: 1.5px;
+}
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 100%;
+}
+
+.card {
+    max-width: 100%;
+    min-height: 0;
+    margin: 0.1em;
+    box-shadow: 2px 2px 5px #0000002F;
+    background-color: #FFFFFF;
+    border-radius: 0.2rem;
+    border: 1px solid #0000002F;
+    box-sizing: border-box;
+    display: inline-block;
+    padding: 1rem;
+}
+
+canvas {
+    position: relative;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    min-height: 300px;
+    max-height: 300px;
+    height: 300px;
+    min-width: 100%;
+    max-width: 100%;
+    width: 100%;
+}
+
+.card > h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.span-2 {
+    grid-column: span 2;
+}
+
+@media only screen and (max-width: 1200px) {
+    .dashboard-cards {
+        grid-template-columns: repeat(1, 1fr);
+    }
+    .span-2 {
+        grid-column: span 1;
+    }
+}
+
+.total-consumption {
+    display: block;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.graph {
+    margin-top: 0.5em;
+    margin-bottom: 1em;
+    position: relative;
+}
+
+.doughnut-label {
+    z-index: 5;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 0%);
+}
+
+.doughnut-label.full {
+    transform: translate(-50%, -70%);
+}
+
+li {
+    margin: 0.5rem 0;
+}
+
+.per-bldg-consumption {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    list-style-type: none;
+    font-size: 0.9rem;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.per-bldg-consumption li {
+    margin-top: 0.15rem;
+    margin-bottom: 0.15rem;
+    margin-left: 1rem;
+    box-sizing: border-box;
+    flex: 1 0 25%;
+    list-style-type: disc;
+}
+
+.per-bldg-consumption > .more {
+    margin-top: 0.3rem;
+}
