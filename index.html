@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PowerBuddy Prototype</title>
+
+        <link rel="stylesheet" href="./css/styles.css" />
+    </head>
+    <body>
+        <nav class="side-nav">
+            <section class="nav-header-section">
+                <span class="nav-header">PowerBuddy</span>
+                <a href="javascript:void(0)" class="closebtn">&times;</a>
+            </section>
+            <hr />
+            <a href="index.html">Dashboard</a>
+            <a href="meters.html">Meters</a>
+            <a href="reports.html">Reports</a>
+            <a href="settings.html">Settings</a>
+            <a href="#">Log Out</a>
+        </nav>
+        <section class="main">
+            <header class="header">
+                <span class="btn navbtn">
+                    <img src="svg/hamburger-svgrepo-com.svg" style="top: 2px" width="16"/>
+                </span>
+                <span class="title">Dashboard</span>
+                <span style="margin-left: auto;">
+                    <span class="btn">
+                        <img src="svg/bell-svgrepo-com.svg" style="top: -1px" width="16"/>
+                    </span>
+                    <span class="btn">
+                        <img src="svg/log-out-svgrepo-com.svg" style="top: -1px" width="16"/>
+                        <span>Log Out</span>
+                    </span>
+                </span>
+            </header>
+            <section class="main-content">
+                <section class="record-period-section">
+                    <section class="period-time">
+                        <span>
+                            <span>From</span>
+                            <input type="date" name="period-from-date" value="2024-04-19" />
+                            <input type="time" name="period-from-time" value="00:00" />
+                        </span>
+                        <span>
+                            <span>To</span>
+                            <input type="date" name="period-from-date" value="2024-04-19" />
+                            <input type="time" name="period-from-time" value="23:00" />
+                        </span>
+                        <span>
+                            Frequency:
+                            <select name="period-start">
+                                <option>5 Minutes</option>
+                                <option selected>Hourly</option>
+                                <option>Daily</option>
+                                <option>Monthly</option>
+                                <option>Yearly</option>
+                            </select>
+                        </span>
+                    </section>
+                </section>
+                <hr style="margin-top: 1rem; margin-bottom: 1rem;"/>
+                <section class="dashboard-cards">
+                    <section class="card">
+                        <h3>TOTAL POWER CONSUMPTION</h3>
+                        <div class="graph">
+                            <canvas id="total-power"></canvas>
+                        </div>
+                    </section>
+                    <section class="card">
+                        <h3>POWER CONSUMPTION DISTRIBUTION</h3>
+                        <div class="graph">
+                            <canvas id="power-distribution"></canvas>
+                        </div>
+                    </section>
+                    <section class="card">
+                        <h3>ENERGY ALLOTMENT USAGE</h3>
+                        <div class="graph">
+                            <canvas id="power-allotted"></canvas>
+                            <h2 class="doughnut-label full">52.75%</h2>
+                        </div>
+                    </section>
+                    <section class="card span-2">
+                        <h3>RECENT RECOMMENDATIONS</h3>
+                        <ul>
+                            <li><b>2024-04-20 11:00 am</b>: Power consumption in <u>Student Activity Center</u> is abnormally high. Reduce power consumption in <u>Student Activity Center</u>.</li>
+                            <li><b>2024-04-20 10:30 am</b>: Power consumption in <u>CAS Bldg 2</u> is abnormally high. Reduce power consumption in <u>CAS Bldg 2</u>.</li>
+                            <li><b>2024-04-19 10:30 am</b>: Power consumption in <u>CAS Bldg 2</u> is abnormally high. Reduce power consumption in <u>CAS Bldg 2</u>.</li>
+                            <li><b>2024-04-18 4:30 pm</b>: No power consumption detected in <u>CCMS Bldg</u> for 12 hours. Check if power is working properly in <u>CCMS Bldg</u>.</li>
+                        </ul>
+                    </section>
+                    <section class="card">
+                        <h3>PROJECTED MONTHLY USAGE</h3>
+                        For the month of April 2024<br />
+                        <div class="graph">
+                            <canvas id="power-projected"></canvas>
+                            <h2 class="doughnut-label">38863&nbsp;kWh</h2>
+                        </div>
+                    </section>
+                </section>
+            </section>
+            
+        </section>
+
+        <script src="./js/dummy-data.js"></script>
+        <script src="./js/chartjs/dist/chart.umd.min.js"></script>
+        <script src="./js/jquery-3.7.1.min.js"></script>
+        <script src="./js/common.js"></script>
+
+        <script src="./js/dashboard.js"></script>
+</html>

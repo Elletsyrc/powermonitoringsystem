@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PowerBuddy Prototype</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+  <style>
+    /* Adding necessary layout rules to maintain the side-by-side look */
+    .settings-container { display: flex; gap: 2rem; align-items: flex-start; }
+    .settings-sidebar { width: 250px; display: flex; flex-direction: column; flex-shrink: 0; }
+    .settings-sidebar a { 
+        padding: 1rem; text-decoration: none; color: #555; background: #e0e0e0; 
+        margin-bottom: 5px; border-radius: 4px; transition: 0.3s;
+    }
+    .settings-sidebar a.active { background: #00304F; color: white; }
+    .settings-content { flex-grow: 1; }
+    .settings-card { display: none; background: white; padding: 1.5rem; border: 1px solid #ddd; border-radius: 4px; }
+    .settings-card.active { display: block; }
+    
+    /* Functional UI Styling */
+    .sv-btn { background: #00304F; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+    .saved-limits-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .saved-limits-table th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+    .delete-btn { color: #d9534f; border: none; background: none; cursor: pointer; }
+    .edit-btn { color: #00304F; border: none; background: none; cursor: pointer; }
+  </style>
+</head>
+
+<body>
+  <nav class="side-nav">
+    <section class="nav-header-section">
+      <span class="nav-header">PowerBuddy</span>
+      <a href="javascript:void(0)" class="closebtn">&times;</a>
+    </section>
+    <hr />
+    <a href="index.html">Dashboard</a>
+    <a href="meters.html">Meters</a>
+    <a href="reports.html">Reports</a>
+    <a href="settings.html">Settings</a>
+    <a href="#">Log Out</a>
+  </nav>
+
+  <section class="main">
+    <header class="header">
+      <span class="btn navbtn">
+        <img src="svg/hamburger-svgrepo-com.svg" style="top: 2px" width="16" />
+      </span>
+      <span class="title">Settings</span> <span style="margin-left: auto;">
+        <span class="btn"><img src="svg/bell-svgrepo-com.svg" width="16" /></span>
+        <span class="btn"><img src="svg/log-out-svgrepo-com.svg" width="16" /><span>Log Out</span></span>
+      </span>
+    </header>
+
+    <section class="main-content">
+      <h1>Settings</h1>
+
+      <div class="settings-container">
+        <aside class="settings-sidebar">
+          <a href="#" class="active" data-section="profile">User Profile</a>
+          <a href="#" data-section="limits">Per-Meter Limits</a>
+          <a href="#" data-section="display">Theme & Display</a>
+          <a href="#" data-section="system">System Preferences</a>
+        </aside>
+
+        <div class="settings-content">
+          <div id="profile" class="settings-card active">
+            <h2>User Profile</h2>
+            <p class="section-description">Manage your account details and update your profile information.</p>
+            <label for="username">Username</label>
+            <input type="text" id="username" style="width:100%;" placeholder="Enter your username">
+            <label for="email">Email</label>
+            <input type="email" id="email" style="width:100%;" placeholder="Enter your email">
+            <button class="sv-btn" style="margin-top:15px;" onclick="saveData('profile')">Update Profile</button>
+          </div>
+
+          <div id="limits" class="settings-card">
+            <h2>Per-Meter Limits</h2>
+            <div class="limit-entry" style="background:#f9f9f9; padding:15px; border-radius:4px;">
+              <label>Select Meter</label>
+              <select id="meter-name" style="width:100%;">
+                <option>Main House Meter</option>
+                <option>CAS bldg 1</option>
+                <option>CCMS bldg</option>
+                <option>Gymnasium</option>
+              </select>
+
+              <label>Usage Limit (kWh)</label>
+              <input type="number" id="meter-kwh" style="width:100%;" placeholder="Enter max usage">
+
+              <label>Alert Threshold (%)</label>
+              <input type="number" id="meter-threshold" style="width:100%;" placeholder="e.g. 80">
+              
+              <button class="sv-btn" style="margin-top:10px;" onclick="addMeterLimit()">Save Limit</button>
+            </div>
+
+            <hr style="margin: 25px 0;">
+            <h3>Saved Limits</h3>
+            <table class="saved-limits-table">
+              <thead>
+                <tr>
+                  <th>Meter Name</th>
+                  <th>Limit (kWh)</th>
+                  <th>Threshold</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="limits-body">
+                </tbody>
+            </table>
+          </div>
+
+          <div id="display" class="settings-card">
+            <h2>Theme & Display</h2>
+            <label>Theme Color</label>
+            <select id="theme-choice" onchange="toggleDarkMode(this.value)" style="width:100%;">
+              <option value="default">Default</option>
+              <option value="dark">Dark Mode</option>
+            </select>
+            <button class="sv-btn" style="margin-top:15px;" onclick="saveData('display')">Save Display Settings</button>
+          </div>
+
+          <div id="system" class="settings-card">
+            <h2>System Preferences</h2>
+            <label>Energy Unit</label>
+            <select style="width:100%;"><option>kWh</option><option>Wh</option></select>
+            <button class="sv-btn" style="margin-top:15px;">Save Preferences</button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <script src="js/jquery-3.7.1.min.js"></script>
+    <script src="js/common.js"></script>
+
+    <script>
+      // Initial Meter Data
+      let meterLimits = JSON.parse(localStorage.getItem('meterLimits')) || [
+        { name: "Main House Meter", kwh: 500, threshold: 80 },
+        { name: "CAS bldg 1", kwh: 350, threshold: 75 }
+      ];
+
+      document.addEventListener("DOMContentLoaded", function () {
+        // Tab switching logic
+        const sidebarLinks = document.querySelectorAll(".settings-sidebar a");
+        const cards = document.querySelectorAll(".settings-card");
+
+        sidebarLinks.forEach(link => {
+          link.addEventListener("click", e => {
+            e.preventDefault();
+            sidebarLinks.forEach(a => a.classList.remove("active"));
+            cards.forEach(card => card.classList.remove("active"));
+
+            link.classList.add("active");
+            const sectionId = link.getAttribute('data-section');
+            document.getElementById(sectionId).classList.add("active");
+          });
+        });
+
+        renderTable();
+      });
+
+      // --- LOGIC FUNCTIONS ---
+
+      function renderTable() {
+        const tbody = document.getElementById('limits-body');
+        tbody.innerHTML = meterLimits.map((item, index) => `
+          <tr>
+            <td>${item.name}</td>
+            <td>${item.kwh}</td>
+            <td>${item.threshold}%</td>
+            <td>
+              <button class="delete-btn" onclick="deleteLimit(${index})">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      function addMeterLimit() {
+        const name = document.getElementById('meter-name').value;
+        const kwh = document.getElementById('meter-kwh').value;
+        const threshold = document.getElementById('meter-threshold').value;
+
+        // Stricter logical validation
+        if (!kwh || kwh <= 0) return alert("Please enter a valid kWh limit.");
+        if (!threshold || threshold < 1 || threshold > 100) return alert("Threshold must be between 1 and 100%.");
+
+        // Update if exists, otherwise add new
+        const existingIndex = meterLimits.findIndex(m => m.name === name);
+        if (existingIndex > -1) {
+            meterLimits[existingIndex] = { name, kwh, threshold };
+        } else {
+            meterLimits.push({ name, kwh, threshold });
+        }
+
+        localStorage.setItem('meterLimits', JSON.stringify(meterLimits));
+        renderTable();
+        alert("Limit saved successfully!");
+      }
+
+      function deleteLimit(index) {
+        if(confirm("Remove this meter limit?")) {
+            meterLimits.splice(index, 1);
+            localStorage.setItem('meterLimits', JSON.stringify(meterLimits));
+            renderTable();
+        }
+      }
+
+      function toggleDarkMode(val) {
+        if(val === 'dark') {
+            document.body.style.background = "#222";
+            document.body.style.color = "#fff";
+        } else {
+            document.body.style.background = "#EFEFEF";
+            document.body.style.color = "#000";
+        }
+      }
+
+      function saveData(type) {
+          alert(type + " settings updated and saved locally.");
+      }
+    </script>
+</body>
+</html>

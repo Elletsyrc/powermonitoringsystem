@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PowerBuddy Prototype - Meters</title>
+    <link rel="stylesheet" href="./css/styles.css" />
+    <style>
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-add-meter {
+            background-color: #00A86B;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.3rem;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-add-meter:hover {
+            background-color: #008556;
+        }
+        
+        /* Integrated Apply Filter Button */
+        .btn-apply {
+            background-color: #00304F;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 1rem;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 1.5rem;
+            font-size: 0.8rem;
+            transition: opacity 0.3s;
+            vertical-align: middle;
+        }
+        .btn-apply:hover { opacity: 0.8; }
+
+        .meter-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .meter-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-edit, .btn-delete {
+            padding: 0.4rem 0.8rem;
+            border: 1px solid #CFCFCF;
+            background-color: #F5F5F5;
+            border-radius: 0.3rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        
+        .meter-type-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.3rem;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        
+        .badge-main { background-color: #00304F; color: white; }
+        .badge-sub { background-color: #CFCFCF; color: #1F1F1F; }
+        
+        .consumption-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00304F;
+        }
+        
+        .consumption-unit {
+            font-size: 1rem;
+            color: #7F7F7F;
+            margin-left: 0.3rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #FFFFFF;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .no-data-msg {
+            grid-column: 1 / -1;
+            padding: 3rem;
+            text-align: center;
+            background: #fff;
+            border: 1px dashed #ccc;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="side-nav">
+        <section class="nav-header-section">
+            <span class="nav-header">PowerBuddy</span>
+            <a href="javascript:void(0)" class="closebtn">&times;</a>
+        </section>
+        <hr />
+        <a href="index.html">Dashboard</a>
+        <a href="meters.html">Meters</a>
+        <a href="reports.html">Reports</a>
+        <a href="settings.html">Settings</a>
+        <a href="#">Log Out</a>
+    </nav>
+    
+    <section class="main">
+        <header class="header">
+            <span class="btn navbtn">
+                <img src="svg/hamburger-svgrepo-com.svg" style="top: 2px" width="16"/>
+            </span>
+            <span class="title">Meters</span>
+            <span style="margin-left: auto;" class="header-actions">
+                <button class="btn-add-meter" onclick="openAddModal()">+ Add Meter</button>
+                <span class="btn">
+                    <img src="svg/bell-svgrepo-com.svg" style="top: -1px" width="16"/>
+                </span>
+                <span class="btn">
+                    <img src="svg/log-out-svgrepo-com.svg" style="top: -1px" width="16"/>
+                    <span>Log Out</span>
+                </span>
+            </span>
+        </header>
+        
+        <section class="main-content">
+            <section class="record-period-section">
+                <section class="period-time">
+                    <span>
+                        <span>From</span>
+                        <input type="date" id="date-from" value="2024-01-01" />
+                        <input type="time" id="time-from" value="00:00" />
+                    </span>
+                    <span>
+                        <span>To</span>
+                        <input type="date" id="date-to" value="2025-12-31" />
+                        <input type="time" id="time-to" value="23:59" />
+                    </span>
+                    <span>
+                        Frequency:
+                        <select id="frequency">
+                            <option>5 Minutes</option>
+                            <option>Hourly</option>
+                            <option selected>Daily</option>
+                            <option>Monthly</option>
+                            <option>Yearly</option>
+                        </select>
+                    </span>
+                    <button class="btn-apply" id="applyFilterBtn">Apply Filter</button>
+                </section>
+            </section>
+            <hr />
+            
+            <section class="dashboard-cards" id="metersContainer">
+            </section>
+        </section>
+    </section>
+
+    <script src="./js/dummy-data.js"></script>
+    <script src="./js/chartjs/dist/chart.umd.min.js"></script>
+    <script src="./js/jquery-3.7.1.min.js"></script>
+    <script src="./js/common.js"></script>
+    <script>
+        /**
+         * 1. Massive Daily Data Generator (2000 - 2025)
+         */
+        const fullDatabase = [];
+        function generateData() {
+            const start = new Date(2000, 0, 1);
+            const end = new Date(2025, 11, 31);
+            let current = new Date(start);
+
+            while (current <= end) {
+                const month = current.getMonth();
+                const baseLoad = 60 + (Math.random() * 30);
+                const seasonalMod = (month >= 3 && month <= 6) ? 1.3 : 1.0; // Higher load in summer
+                
+                fullDatabase.push({
+                    ts: current.getTime(),
+                    val: parseFloat((baseLoad * seasonalMod).toFixed(2)),
+                    dateStr: current.toISOString().split('T')[0]
+                });
+                current.setDate(current.getDate() + 1);
+            }
+        }
+
+        let meters = [
+            { id: 'main', name: 'Main Meter', type: 'main' },
+            { id: 'submeter_1', name: 'CAS Bldg 1', type: 'sub' },
+            { id: 'submeter_7', name: 'CCMS Bldg', type: 'sub' },
+            { id: 'submeter_10', name: 'Gymnasium', type: 'sub' }
+        ];
+        let charts = {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            generateData();
+            renderDashboard();
+
+            // Click listener for the Apply Filter button
+            document.getElementById('applyFilterBtn').addEventListener('click', renderDashboard);
+        });
+
+        function renderDashboard() {
+            const container = document.getElementById('metersContainer');
+            const activeData = getFilteredData();
+            
+            container.innerHTML = '';
+            Object.values(charts).forEach(c => c.destroy());
+            charts = {};
+
+            if (activeData.length === 0) {
+                container.innerHTML = `<div class="no-data-msg"><h3>No data available for this range.</h3><p>Ensure your dates are between 2000 and 2025.</p></div>`;
+                return;
+            }
+
+            meters.forEach(meter => {
+                const card = createMeterCard(meter, activeData);
+                container.appendChild(card);
+                initChart(meter, activeData);
+            });
+        }
+
+        function getFilteredData() {
+            const fromStr = document.getElementById('date-from').value;
+            const toStr = document.getElementById('date-to').value;
+            const freq = document.getElementById('frequency').value;
+
+            let filtered = fullDatabase.filter(d => d.dateStr >= fromStr && d.dateStr <= toStr);
+
+            // Simple aggregation for broad ranges
+            if (freq === 'Monthly' || filtered.length > 500) {
+                filtered = filtered.filter((_, i) => i % 30 === 0);
+            } else if (freq === 'Yearly') {
+                filtered = filtered.filter((_, i) => i % 365 === 0);
+            }
+            return filtered;
+        }
+
+        function createMeterCard(meter, data) {
+            let total = 0;
+            if (meter.type === 'main') {
+                total = data.reduce((s, r) => s + r.val, 0);
+            } else {
+                const ratio = window.powerDistributionRatio.hourly.find(r => r.id === meter.id)?.value || 0.1;
+                total = data.reduce((s, r) => s + (r.val * ratio), 0);
+            }
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="meter-card-header">
+                    <h3>${meter.name} <span class="meter-type-badge badge-${meter.type}">${meter.type.toUpperCase()}</span></h3>
+                    <div class="meter-actions">
+                        <button class="btn-edit">Edit</button>
+                        <button class="btn-delete">Delete</button>
+                    </div>
+                </div>
+                <div class="total-consumption">
+                    <span class="consumption-value">${total.toLocaleString(undefined, {maximumFractionDigits: 1})}</span>
+                    <span class="consumption-unit">kWh Total</span>
+                </div>
+                <div class="graph"><canvas id="canvas-${meter.id}"></canvas></div>
+            `;
+            return card;
+        }
+
+        function initChart(meter, data) {
+            const ctx = document.getElementById(`canvas-${meter.id}`).getContext('2d');
+            const labels = data.map(r => r.dateStr);
+            
+            let dataset;
+            if (meter.type === 'main') {
+                dataset = data.map(r => r.val);
+            } else {
+                const ratio = window.powerDistributionRatio.hourly.find(r => r.id === meter.id)?.value || 0.1;
+                dataset = data.map(r => r.val * ratio);
+            }
+
+            charts[meter.id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataset,
+                        borderColor: meter.type === 'main' ? '#00304F' : '#0496FF',
+                        backgroundColor: 'rgba(0, 48, 79, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: data.length > 100 ? 0 : 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: data.length < 32 } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

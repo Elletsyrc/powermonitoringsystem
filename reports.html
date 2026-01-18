@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PowerBuddy Prototype</title>
+
+        <link rel="stylesheet" href="./css/styles.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+        <style>
+
+            .reports-list {
+                list-style-type: none;
+                padding: 0;
+            }
+            .reports-list li {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.5rem;
+                border-bottom: 1px solid #ddd;
+            }
+            .reports-list li button {
+                margin-left: 0.5rem;
+                font-size: 0.8rem;
+            }
+            .edit-input {
+                flex: 1;
+                margin-right: 0.5rem;
+            }
+            .instruction {
+                font-weight: bold;
+                color: #00304F;
+                margin-bottom: 1rem;
+                position: sticky;
+                top: 0;
+                background-color: #FFFFFF;
+                padding: 0.5rem;
+                border-bottom: 1px solid #ddd;
+                z-index: 1;
+            }
+
+            #chart-canvas {
+                width: 800px;
+                height: 400px;
+                position: fixed;
+                left: -9999px;
+                top: -9999px;
+            }
+
+
+            :root{
+                --primary:#00304F;
+                --accent:#0b6b9e;
+                --bg-overlay: rgba(0,0,0,0.45);
+                --card-bg: #ffffff;
+                --radius: 12px;
+                --shadow: 0 8px 30px rgba(0,0,0,0.15);
+            }
+
+            .modal-overlay {
+                position: fixed;
+                inset: 0;
+                display: none;
+                justify-content: center;
+                align-items: center;
+                z-index: 3000;
+                background: var(--bg-overlay);
+                backdrop-filter: blur(4px);
+            }
+
+            .modal-overlay.active { display:flex; }
+
+            .modal-box {
+                width: 460px;
+                max-width: calc(100% - 48px);
+                background: var(--card-bg);
+                border-radius: var(--radius);
+                padding: 1.25rem;
+                box-shadow: var(--shadow);
+                transform: translateY(8px) scale(.98);
+                opacity: 0;
+                transition: transform 260ms cubic-bezier(.2,.9,.3,1), opacity 260ms ease;
+            }
+
+            .modal-overlay.active .modal-box {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+
+            .modal-header {
+                display:flex;
+                align-items:center;
+                gap:.75rem;
+            }
+            .modal-title {
+                font-size: 1.125rem;
+                color:var(--primary);
+                margin:0;
+                font-weight:600;
+            }
+            .title {
+                padding: 0.75rem 0;
+                display: flex;
+                align-items: center;
+            }
+            .modal-body {
+                margin-top: .75rem;
+            }
+            .modal-footer {
+                margin-top: 1rem;
+                display:flex;
+                gap:.5rem;
+                justify-content: flex-end;
+            }
+            .btn {
+                padding: .45rem .6rem;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+                font-size: .95rem;
+            }
+            .btn.ghost {
+                background: transparent;
+                color: var(--primary);
+            }
+            .btn.primary {
+                background: var(--primary);
+                color: #fff;
+            }
+            .btn.positive {
+                background: var(--accent);
+                color: white;
+            }
+            .btn.danger {
+                background: #c43e3e;
+                color: white;
+            }
+
+
+            .wizard-step { display:none; }
+            .wizard-step.active { display:block; animation: fadeInUp 240ms ease; }
+            @keyframes fadeInUp {
+                from { transform: translateY(6px); opacity:0; }
+                to { transform: translateY(0); opacity:1; }
+            }
+
+            .field {
+                margin: .6rem 0;
+                display:flex;
+                flex-direction:column;
+            }
+            label { font-size:.9rem; color:#0b3b50; margin-bottom:.35rem; }
+            select, input[type="text"], input[type="date"], input[type="month"], input[type="number"] {
+                padding: .5rem .6rem;
+                border-radius: 8px;
+                border: 1px solid #d3dce1;
+                font-size: .95rem;
+            }
+
+            .step-indicator {
+                display:flex;
+                gap:.5rem;
+                align-items:center;
+                margin-bottom:.5rem;
+            }
+            .step-dot {
+                width:10px;height:10px;border-radius:50%;
+                background:#dfe7ea;
+            }
+            .step-dot.active { background: var(--primary); width:12px; height:12px; }
+
+            @media (max-width:520px){
+                .modal-box { width: 92%; padding:1rem; }
+            }
+
+            .muted { font-size:.85rem; color:#6b7f88; margin-top:.25rem;}
+
+            .spinner-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(255,255,255,0.75);
+                display: none;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                z-index: 5000;
+                backdrop-filter: blur(2px);
+            }
+            .spinner-overlay.active { display:flex; }
+            .spinner {
+                width: 36px;
+                height: 36px;
+                border: 4px solid #00304F33;
+                border-top-color: #00304F;
+                border-radius: 50%;
+                animation: spin 0.9s linear infinite;
+            }
+            .spinner-text {
+                margin-top: 12px;
+                font-size: .95rem;
+                color: #00304F;
+                font-weight: 600;
+            }
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="side-nav">
+            <section class="nav-header-section">
+                <span class="nav-header">PowerBuddy</span>
+                <a href="javascript:void(0)" class="closebtn">&times;</a>
+            </section>
+            <hr />
+            <a href="index.html">Dashboard</a>
+            <a href="meters.html">Meters</a>
+            <a href="reports.html">Reports</a>
+            <a href="settings.html">Settings</a>
+            <a href="#">Log Out</a>
+        </nav>
+        <section class="main">
+            <header class="header">
+                <span class="btn navbtn">
+                    <img src="svg/hamburger-svgrepo-com.svg" style="top: 2px" width="16"/>
+                </span>
+                <span class="title">Reports</span>
+                <span style="margin-left: auto;">
+                    <span class="btn">
+                        <img src="svg/bell-svgrepo-com.svg" style="top: -1px" width="16"/>
+                    </span>
+                    <span class="btn">
+                        <img src="svg/log-out-svgrepo-com.svg" style="top: -1px" width="16"/>
+                        <span>Log Out</span>
+                    </span>
+                </span>
+            </header>
+            
+            <div class="main-content">
+                <div class="dashboard-cards">
+                    <div class="card">
+                        <h3>Generate New Report</h3>
+                        <button id="generate-report-btn" class="btn primary">Generate Report</button>
+                        <p>Click to create a new monthly, yearly, or daily report for a selected period and scope (department or campus-wide).</p>
+                    </div>
+                    <div class="card span-2">
+                        <h3>Previously Generated Reports</h3>
+                        <p class="instruction">View, edit, or delete past reports here.</p>
+                        <ul id="reports-list" class="reports-list">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <canvas id="chart-canvas" width="800" height="400"></canvas>
+
+        <div id="pdf-spinner" class="spinner-overlay" aria-hidden="true">
+            <div class="spinner" role="status" aria-hidden="true"></div>
+            <div class="spinner-text">Generating PDF...</div>
+        </div>
+
+        <div id="app-modal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+            <div class="modal-box" role="document" aria-labelledby="modal-title">
+                <div class="modal-header">
+                    <h3 id="modal-title" class="modal-title">Generate Report</h3>
+                </div>
+
+                <div class="modal-body">
+                    <div class="step-indicator" id="wizard-indicator">
+                        <div class="step-dot active" data-step="1"></div>
+                        <div class="step-dot" data-step="2"></div>
+                        <div class="step-dot" data-step="3"></div>
+                        <div class="step-dot" data-step="4"></div>
+                    </div>
+
+                    <div class="wizard-step active" id="step-1">
+                        <div class="field">
+                            <label for="report-type">Report Type</label>
+                            <select id="report-type" aria-label="Report type">
+                                <option value="" disabled selected>Select type...</option>
+                                <option value="daily">Daily</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                            <div class="muted">Choose whether this is daily, monthly, or yearly.</div>
+                        </div>
+                    </div>
+
+                    <div class="wizard-step" id="step-2">
+                        <div class="field">
+                            <label for="report-scope">Scope</label>
+                            <select id="report-scope" aria-label="Report scope">
+                                <option value="" disabled selected>Select scope...</option>
+                                <option value="CBPA">CBPA</option>
+                                <option value="CAS">CAS</option>
+                                <option value="CoEng">CoEng</option>
+                                <option value="CCMS">CCMS</option>
+                                <option value="Campus">Campus</option>
+                            </select>
+                            <div class="muted">Scope narrows the buildings included in the report.</div>
+                        </div>
+                    </div>
+
+                    <div class="wizard-step" id="step-3">
+
+                        <div class="field" id="period-year-wrap">
+                            <label for="period-year">Start Year</label>
+                            <input id="period-year" type="number" min="1900" />
+                            <div class="muted">Enter start year. Report will include data from this year up to current year.</div>
+                        </div>
+
+                        <div class="field" id="period-month-range-wrap">
+                            <label>Month Range</label>
+                            <div style="display:flex; gap:8px;">
+                                <input id="period-start-month" type="month" />
+                                <input id="period-end-month" type="month" />
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                                <input id="period-month-all" type="checkbox" />
+                                <label for="period-month-all" style="margin:0;">All months of the year</label>
+                            </div>
+                            <div class="muted">Pick a start and end month (inclusive), or check "All months of the year".</div>
+                        </div>
+
+                        <div class="field" id="period-date-range-wrap">
+                            <label>Daily Range</label>
+                            <div style="display:flex; gap:8px;">
+                                <input id="period-start-date" type="date" />
+                                <input id="period-end-date" type="date" />
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                                <input id="period-date-all" type="checkbox" />
+                                <label for="period-date-all" style="margin:0;">All days of selected month</label>
+                            </div>
+                            <div class="muted">Pick a start and end date (inclusive), or check "All days of selected month".</div>
+                        </div>
+                    </div>
+
+                    <div class="wizard-step" id="step-4">
+                        <div class="field">
+                            <label>Summary</label>
+                            <div id="summary-text" class="muted">Review the selections before generating.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn ghost" id="wizard-back">Back</button>
+                    <button class="btn ghost" id="wizard-cancel">Cancel</button>
+                    <button class="btn positive" id="wizard-next">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="simple-modal" class="modal-overlay" aria-hidden="true" role="dialog">
+            <div class="modal-box" role="document">
+                <div class="modal-header">
+                    <h3 id="simple-modal-title" class="modal-title">Notice</h3>
+                </div>
+                <div class="modal-body">
+                    <div id="simple-modal-message" class="muted"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn ghost" id="simple-modal-cancel">Cancel</button>
+                    <button class="btn primary" id="simple-modal-ok">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="./js/dummy-data.js"></script>
+        <script src="./js/chartjs/dist/chart.umd.min.js"></script>
+        <script src="./js/jquery-3.7.1.min.js"></script>
+        <script src="./js/common.js"></script>
+
+        <script>
+
+            const debugMode = true;
+            function debugLog(...args) { if (debugMode) console.log('[DEBUG]', ...args); }
+
+            const buildings = {
+                CBPA: ['CBPA Bldg 1', 'CBPA Bldg 2'],
+                CAS: ['CAS Bldg 1', 'CAS Bldg 2'],
+                CoEng: ['CoEng Bldg 1', 'CoEng Bldg 2'],
+                CCMS: ['CCMS Bldg'],
+                Campus: ['Covered Court', 'Student Activity Center', 'Gymnasium']
+            };
+
+            function generateBuildingData(type, periodLength) {
+                const data = {};
+                Object.keys(buildings).forEach(dept => {
+                    data[dept] = {};
+                    buildings[dept].forEach(building => {
+                        data[dept][building] = Array.from({ length: periodLength }, () => Math.floor(Math.random() * 500) + 100);
+                    });
+                });
+                return data;
+            }
+
+            const consumptionData = {
+                daily: generateBuildingData('daily', 30),
+                monthly: generateBuildingData('monthly', 12),
+                yearly: generateBuildingData('yearly', 5)
+            };
+
+            let reports = JSON.parse(localStorage.getItem('reports')) || [
+                { id: 1, name: 'Monthly Report - CBPA - January 2023', type: 'monthly', period: 'January 2023', scope: 'CBPA', rawPeriod: {} },
+                { id: 2, name: 'Yearly Report - Campus - 2022', type: 'yearly', period: '2022', scope: 'Campus', rawPeriod: {} },
+                { id: 3, name: 'Daily Report - CAS - Week 1 2023', type: 'daily', period: 'Week 1 2023', scope: 'CAS', rawPeriod: {} }
+            ];
+
+            const reportsList = document.getElementById('reports-list');
+
+            function renderReports() {
+                reportsList.innerHTML = '';
+                reports.forEach(report => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="report-name">${report.name}</span>
+                        <div>
+                            <button class="btn ghost download-btn" data-id="${report.id}">Download PDF</button>
+                            <button class="btn ghost edit-btn" data-id="${report.id}">Edit</button>
+                            <button class="btn danger delete-btn" data-id="${report.id}">Delete</button>
+                        </div>
+                    `;
+                    reportsList.appendChild(li);
+                });
+                localStorage.setItem('reports', JSON.stringify(reports));
+            }
+
+            let _lastChart = null;
+
+            async function generateChartImage(data, labels, title) {
+                debugLog('generateChartImage start', { labels, data, title });
+
+                if (typeof Chart === 'undefined') {
+                    debugLog('Chart.js not found — falling back to simple canvas rendering');
+                    const cv = document.getElementById('chart-canvas');
+                    const ctx = cv.getContext('2d');
+                    ctx.clearRect(0,0,cv.width, cv.height);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0,0,cv.width, cv.height);
+                    ctx.fillStyle = '#00304F';
+                    ctx.font = '16px Arial';
+                    ctx.fillText(title || '', 10, 20);
+                    const fallback = cv.toDataURL('image/png');
+                    debugLog('fallback chart image length', fallback.length);
+                    return fallback;
+                }
+
+                const canvas = document.getElementById('chart-canvas');
+                const ctx = canvas.getContext('2d');
+
+                try {
+                    if (_lastChart && typeof _lastChart.destroy === 'function') {
+                        _lastChart.destroy();
+                        _lastChart = null;
+                        debugLog('Destroyed previous chart instance');
+                    }
+                } catch (err) {
+                    console.warn('Error destroying previous chart:', err);
+                }
+
+                const desiredWidth = 800;
+                const desiredHeight = 400;
+                canvas.width = desiredWidth;
+                canvas.height = desiredHeight;
+
+                _lastChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: title,
+                            data: data,
+                            borderColor: '#00304F',
+                            backgroundColor: 'rgba(0, 48, 79, 0.1)',
+                            fill: false,
+                            tension: 0.2,
+                            pointRadius: 2
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        plugins: { legend: { display: true } },
+                        scales: {
+                            x: { display: true },
+                            y: { display: true }
+                        }
+                    }
+                });
+
+                await new Promise(r => setTimeout(r, 40));
+
+                let dataUrl;
+                try {
+                    dataUrl = _lastChart.toBase64Image();
+                    debugLog('Chart.toBase64Image success, length:', dataUrl.length);
+                } catch (err) {
+                    console.warn('Chart toBase64Image failed, falling back to canvas.toDataURL', err);
+                    dataUrl = canvas.toDataURL('image/png');
+                    debugLog('Canvas fallback dataURL length', dataUrl.length);
+                }
+
+                try {
+                    _lastChart.destroy();
+                    _lastChart = null;
+                    debugLog('Destroyed chart after export');
+                } catch (err) {
+                    console.warn('Error destroying chart after export:', err);
+                }
+
+                return dataUrl;
+            }
+
+            function generateDataForPeriod(type, rawPeriod = {}) {
+                if (type === 'yearly') {
+                    const startYear = Number(rawPeriod.startYear) || (new Date().getFullYear());
+                    const currentYear = new Date().getFullYear();
+                    const labels = [];
+                    for (let y = startYear; y <= currentYear; y++) labels.push(String(y));
+                    return { labels, length: labels.length };
+                }
+
+                if (type === 'monthly') {
+
+                    if (rawPeriod.allMonths) {
+                        let baseYear = (rawPeriod.startMonth && rawPeriod.startMonth.split('-')[0]) || String(new Date().getFullYear());
+                        const labels = Array.from({ length: 12 }, (_, i) => new Date(baseYear, i).toLocaleString('en', { month: 'long' }));
+                        return { labels, length: 12 };
+                    }
+
+                    if (rawPeriod.startMonth && rawPeriod.endMonth) {
+                        const [sy, sm] = rawPeriod.startMonth.split('-').map(Number);
+                        const [ey, em] = rawPeriod.endMonth.split('-').map(Number);
+
+                        const start = new Date(sy, sm - 1, 1);
+                        const end = new Date(ey, em - 1, 1);
+                        const labels = [];
+                        let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+
+                        while (cursor <= end) {
+                            labels.push(cursor.toLocaleString('en', { month: 'long', year: 'numeric' }));
+                            cursor.setMonth(cursor.getMonth() + 1);
+                        }
+                        return { labels, length: labels.length };
+                    }
+
+                    const labels = Array.from({ length: 12 }, (_, i) => new Date().toLocaleString('en', { month: 'long', year: 'numeric' }));
+                    return { labels, length: 12 };
+                }
+
+                if (type === 'daily') {
+
+                    if (rawPeriod.allDaysOfMonth && rawPeriod.startDate) {
+                        const d = new Date(rawPeriod.startDate);
+                        const year = d.getFullYear();
+                        const month = d.getMonth() + 1;
+                        const daysInMonth = new Date(year, month, 0).getDate();
+                        const labels = Array.from({ length: daysInMonth }, (_, i) => {
+                            const dt = new Date(year, month - 1, i + 1);
+                            return dt.toLocaleDateString();
+                        });
+                        return { labels, length: labels.length };
+                    }
+
+
+                    if (rawPeriod.startDate && rawPeriod.endDate) {
+                        const start = new Date(rawPeriod.startDate);
+                        const end = new Date(rawPeriod.endDate);
+                    
+                        if (start > end) {
+                            const tmp = new Date(start);
+                            start.setTime(end.getTime());
+                            end.setTime(tmp.getTime());
+                        }
+                        const labels = [];
+                        const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                        while (cursor <= end) {
+                            labels.push(new Date(cursor).toLocaleDateString());
+                            cursor.setDate(cursor.getDate() + 1);
+                        }
+                        return { labels, length: labels.length };
+                    }
+
+                    
+                    const labels = Array.from({ length: 30 }, (_, i) => `Day ${i + 1}`);
+                    return { labels, length: 30 };
+                }
+
+                return { labels: [], length: 0 };
+            }
+
+            async function generatePDF(report) {
+                debugLog('generatePDF start', report);
+                
+                const spinner = document.getElementById('pdf-spinner');
+                if (spinner) spinner.classList.add('active');
+                spinner && spinner.setAttribute('aria-hidden', 'false');
+
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+
+                    debugLog('PDF doc created');
+
+                    doc.setFontSize(20);
+                    doc.text(`Camarines Norte State College - ${report.name}`, 20, 30);
+
+                    let yPos = 50;
+                    doc.setFontSize(12);
+                    doc.text(`Report Type: ${report.type.charAt(0).toUpperCase() + report.type.slice(1)}`, 20, yPos);
+                    yPos += 10;
+                    doc.text(`Period: ${report.period}`, 20, yPos);
+                    yPos += 10;
+                    doc.text(`Scope: ${report.scope}`, 20, yPos);
+                    yPos += 20;
+
+                    const scopeBuildings = buildings[report.scope] || [];
+
+                    
+                    const periodInfo = generateDataForPeriod(report.type, report.rawPeriod || {});
+                    const labels = periodInfo.labels;
+                    const length = periodInfo.length;
+
+                    
+                    scopeBuildings.forEach(building => {
+                        const tableData = labels.map((label) => {
+                            const val = Math.floor(Math.random() * 500) + 100;
+                            return [label, `${val} kWh`];
+                        });
+
+                        doc.text(`Consumption for ${building}:`, 20, yPos);
+                        yPos += 10;
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [['Period', 'Consumption (kWh)']],
+                            body: tableData,
+                            theme: 'grid'
+                        });
+                        yPos = doc.lastAutoTable.finalY + 12;
+
+                        
+                        if (yPos > 240) {
+                            doc.addPage();
+                            yPos = 20;
+                        }
+                    });
+
+                    
+                    let overallData = [];
+                    if (scopeBuildings.length) {
+                        overallData = labels.map(() => {
+                            return scopeBuildings.reduce((sum) => {
+                                return sum + (Math.floor(Math.random() * 500) + 100);
+                            }, 0);
+                        });
+                    } else {
+                        overallData = Array.from({ length }, () => Math.floor(Math.random() * 500) + 100);
+                    }
+
+                    debugLog('Preparing chart for overall data', { labels, overallData });
+
+                    const chartImage = await generateChartImage(overallData, labels, `Overall ${report.scope} Consumption`);
+
+                    debugLog('Adding chart image to PDF (image length):', chartImage ? chartImage.length : 0);
+                    doc.addImage(chartImage, 'PNG', 20, Math.max( yPos, 40 ), 160, 80);
+
+                    const filename = `${report.name.replace(/ /g, '_')}.pdf`;
+                    doc.save(filename);
+                    debugLog('PDF saved as', filename);
+
+                } catch (err) {
+                    debugLog('Error during PDF generation:', err);
+                    await modalAlert('An error occurred while generating the PDF. Check console for details (enable debugMode).');
+                } finally {
+                
+                    if (spinner) spinner.classList.remove('active');
+                    spinner && spinner.setAttribute('aria-hidden', 'true');
+                    debugLog('generatePDF finished — spinner hidden');
+                }
+            }
+
+
+            const appModal = document.getElementById('app-modal');
+            const simpleModal = document.getElementById('simple-modal');
+
+            const wizard = {
+                overlay: appModal,
+                titleEl: document.getElementById('modal-title'),
+                steps: Array.from(document.querySelectorAll('.wizard-step')),
+                indicatorDots: Array.from(document.querySelectorAll('.step-dot')),
+                backBtn: document.getElementById('wizard-back'),
+                nextBtn: document.getElementById('wizard-next'),
+                cancelBtn: document.getElementById('wizard-cancel'),
+                inputs: {
+                    type: document.getElementById('report-type'),
+                    scope: document.getElementById('report-scope'),
+                    dateStart: document.getElementById('period-start-date'),
+                    dateEnd: document.getElementById('period-end-date'),
+                    dateAll: document.getElementById('period-date-all'),
+                    monthStart: document.getElementById('period-start-month'),
+                    monthEnd: document.getElementById('period-end-month'),
+                    monthAll: document.getElementById('period-month-all'),
+                    yearStart: document.getElementById('period-year')
+                },
+                summaryText: document.getElementById('summary-text')
+            };
+
+            const simple = {
+                overlay: simpleModal,
+                titleEl: document.getElementById('simple-modal-title'),
+                msgEl: document.getElementById('simple-modal-message'),
+                okBtn: document.getElementById('simple-modal-ok'),
+                cancelBtn: document.getElementById('simple-modal-cancel')
+            };
+
+            const currentYear = new Date().getFullYear();
+            const MIN_YEAR = currentYear - 50;
+            const MAX_YEAR = currentYear + 5;
+
+            wizard.inputs.yearStart.min = MIN_YEAR;
+            wizard.inputs.yearStart.max = MAX_YEAR;
+
+            const dateMin = `${MIN_YEAR}-01-01`;
+            const dateMax = `${MAX_YEAR}-12-31`;
+            wizard.inputs.dateStart.min = dateMin;
+            wizard.inputs.dateStart.max = dateMax;
+            wizard.inputs.dateEnd.min = dateMin;
+            wizard.inputs.dateEnd.max = dateMax;
+            wizard.inputs.monthStart.min = `${MIN_YEAR}-01`;
+            wizard.inputs.monthStart.max = `${MAX_YEAR}-12`;
+            wizard.inputs.monthEnd.min = `${MIN_YEAR}-01`;
+            wizard.inputs.monthEnd.max = `${MAX_YEAR}-12`;
+
+            const periodYearWrap = document.getElementById('period-year-wrap');
+            const periodMonthRangeWrap = document.getElementById('period-month-range-wrap');
+            const periodDateRangeWrap = document.getElementById('period-date-range-wrap');
+
+            function showOverlay(overlay) {
+                overlay.classList.add('active');
+                overlay.setAttribute('aria-hidden','false');
+                const first = overlay.querySelector('select, input, button');
+                if (first) first.focus();
+            }
+            function hideOverlay(overlay) {
+                overlay.classList.remove('active');
+                overlay.setAttribute('aria-hidden','true');
+            }
+
+            function showSimpleModal({ title = 'Notice', message = '', cancelVisible = false, okText = 'OK', cancelText = 'Cancel' } = {}) {
+                return new Promise(resolve => {
+                    simple.titleEl.textContent = title;
+                    simple.msgEl.textContent = message;
+                    simple.okBtn.textContent = okText;
+                    simple.cancelBtn.textContent = cancelText;
+                    simple.cancelBtn.style.display = cancelVisible ? 'inline-block' : 'none';
+
+                    showOverlay(simple.overlay);
+
+                    function cleanup(result) {
+                        simple.okBtn.removeEventListener('click', okHandler);
+                        simple.cancelBtn.removeEventListener('click', cancelHandler);
+                        hideOverlay(simple.overlay);
+                        resolve(result);
+                    }
+                    function okHandler() { cleanup(true); }
+                    function cancelHandler() { cleanup(false); }
+
+                    simple.okBtn.addEventListener('click', okHandler);
+                    simple.cancelBtn.addEventListener('click', cancelHandler);
+                });
+            }
+
+            function modalAlert(message) { return showSimpleModal({ title: 'Notice', message, cancelVisible: false, okText: 'OK' }); }
+            function modalConfirm(message) { return showSimpleModal({ title: 'Confirm', message, cancelVisible: true, okText: 'Confirm' }); }
+
+            let stepIndex = 0;
+
+            function updateWizardUI() {
+                wizard.steps.forEach((el, idx) => {
+                    el.classList.toggle('active', idx === stepIndex);
+                });
+                wizard.indicatorDots.forEach((dot, idx) => {
+                    dot.classList.toggle('active', idx === stepIndex);
+                });
+
+                wizard.backBtn.disabled = stepIndex === 0;
+                wizard.backBtn.style.opacity = stepIndex === 0 ? 0.6 : 1;
+                wizard.nextBtn.textContent = stepIndex === wizard.steps.length - 1 ? 'Generate' : 'Next';
+
+                const typeVal = wizard.inputs.type.value;
+                periodDateRangeWrap.style.display = (typeVal === 'daily') ? 'block' : 'none';
+                periodMonthRangeWrap.style.display = (typeVal === 'monthly') ? 'block' : 'none';
+                periodYearWrap.style.display = (typeVal === 'yearly') ? 'block' : 'none';
+
+                const summary = buildSummaryText();
+                wizard.summaryText.textContent = summary;
+            }
+
+            function buildSummaryText() {
+                const type = wizard.inputs.type.value || '(not selected)';
+                const scope = wizard.inputs.scope.value || '(not selected)';
+                let period = '(not selected)';
+
+                if (type === 'daily') {
+                    if (wizard.inputs.dateAll.checked && wizard.inputs.dateStart.value) {
+                        const d = new Date(wizard.inputs.dateStart.value);
+                        period = `All days of ${d.toLocaleString('en', { month: 'long', year: 'numeric' })}`;
+                    } else if (wizard.inputs.dateStart.value && wizard.inputs.dateEnd.value) {
+                        const s = new Date(wizard.inputs.dateStart.value);
+                        const e = new Date(wizard.inputs.dateEnd.value);
+                        period = `${s.toLocaleDateString()} → ${e.toLocaleDateString()}`;
+                    } else if (wizard.inputs.dateStart.value) {
+                        period = wizard.inputs.dateStart.value;
+                    }
+                } else if (type === 'monthly') {
+                    if (wizard.inputs.monthAll.checked && wizard.inputs.monthStart.value) {
+                        const y = wizard.inputs.monthStart.value.split('-')[0];
+                        period = `All months of ${y}`;
+                    } else if (wizard.inputs.monthStart.value && wizard.inputs.monthEnd.value) {
+                        const sLabel = new Date(...wizard.inputs.monthStart.value.split('-').map(Number), 1).toLocaleString('en', { month: 'long', year: 'numeric' });
+                        const eLabel = new Date(...wizard.inputs.monthEnd.value.split('-').map(Number), 1).toLocaleString('en', { month: 'long', year: 'numeric' });
+                        period = `${sLabel} → ${eLabel}`;
+                    } else if (wizard.inputs.monthStart.value) {
+                        period = wizard.inputs.monthStart.value;
+                    }
+                } else if (type === 'yearly') {
+                    if (wizard.inputs.yearStart.value) {
+                        const sy = wizard.inputs.yearStart.value;
+                        period = `${sy} → ${new Date().getFullYear()}`;
+                    }
+                }
+
+                return `Type: ${type}  |  Scope: ${scope}  |  Period: ${period}`;
+            }
+
+            updateWizardUI();
+
+            document.getElementById('generate-report-btn').addEventListener('click', () => {
+                stepIndex = 0;
+                wizard.inputs.type.value = "";
+                wizard.inputs.scope.value = "";
+                wizard.inputs.dateStart.value = "";
+                wizard.inputs.dateEnd.value = "";
+                wizard.inputs.dateAll.checked = false;
+                wizard.inputs.monthStart.value = "";
+                wizard.inputs.monthEnd.value = "";
+                wizard.inputs.monthAll.checked = false;
+                wizard.inputs.yearStart.value = "";
+                updateWizardUI();
+                showOverlay(wizard.overlay);
+            });
+
+            wizard.nextBtn.addEventListener('click', async () => {
+                if (stepIndex === 0) {
+                    if (!wizard.inputs.type.value) {
+                        await modalAlert('Please pick a report type.');
+                        return;
+                    }
+                } else if (stepIndex === 1) {
+                    if (!wizard.inputs.scope.value) {
+                        await modalAlert('Please pick a scope for the report.');
+                        return;
+                    }
+                } else if (stepIndex === 2) {
+                    const typeVal = wizard.inputs.type.value;
+                    if (typeVal === 'daily') {
+                        if (wizard.inputs.dateAll.checked) {
+                            if (!wizard.inputs.dateStart.value) {
+                                await modalAlert('Please choose a date to determine which month to use for "All days of month".');
+                                return;
+                            }
+                        } else {
+                            if (!wizard.inputs.dateStart.value || !wizard.inputs.dateEnd.value) {
+                                await modalAlert('Please choose both start and end dates for the daily report (or check "All days of selected month").');
+                                return;
+                            }
+                        }
+                    }
+                    if (typeVal === 'monthly') {
+                        if (wizard.inputs.monthAll.checked) {
+                            if (!wizard.inputs.monthStart.value) {
+                                await modalAlert('Please choose a month (will use its year) for "All months of the year".');
+                                return;
+                            }
+                        } else {
+                            if (!wizard.inputs.monthStart.value || !wizard.inputs.monthEnd.value) {
+                                await modalAlert('Please choose both start and end months for the monthly report (or check "All months of the year").');
+                                return;
+                            }
+                        }
+                    }
+                    if (typeVal === 'yearly') {
+                        if (!wizard.inputs.yearStart.value) {
+                            await modalAlert('Please choose a start year for the yearly report.');
+                            return;
+                        }
+                    }
+                }
+
+                if (stepIndex < wizard.steps.length - 1) {
+                    stepIndex++;
+                    updateWizardUI();
+                    return;
+                }
+
+                
+                const typeVal = wizard.inputs.type.value;
+                const scopeVal = wizard.inputs.scope.value;
+                let periodLabel = '';
+                const rawPeriod = {};
+
+                if (typeVal === 'daily') {
+                    if (wizard.inputs.dateAll.checked) {
+                        
+                        rawPeriod.allDaysOfMonth = true;
+                        rawPeriod.startDate = wizard.inputs.dateStart.value;
+                        const d = new Date(rawPeriod.startDate);
+                        periodLabel = `All days of ${d.toLocaleString('en', { month: 'long', year: 'numeric' })}`;
+                    } else {
+                        rawPeriod.startDate = wizard.inputs.dateStart.value;
+                        rawPeriod.endDate = wizard.inputs.dateEnd.value;
+                        const s = new Date(rawPeriod.startDate);
+                        const e = new Date(rawPeriod.endDate);
+                        periodLabel = `${s.toLocaleDateString()} → ${e.toLocaleDateString()}`;
+                    }
+                } else if (typeVal === 'monthly') {
+                    if (wizard.inputs.monthAll.checked) {
+                        rawPeriod.allMonths = true;
+                        rawPeriod.startMonth = wizard.inputs.monthStart.value;
+                        const y = rawPeriod.startMonth ? rawPeriod.startMonth.split('-')[0] : new Date().getFullYear();
+                        periodLabel = `All months of ${y}`;
+                    } else {
+                        rawPeriod.startMonth = wizard.inputs.monthStart.value;
+                        rawPeriod.endMonth = wizard.inputs.monthEnd.value;
+                        const sLabel = rawPeriod.startMonth ? new Date(...rawPeriod.startMonth.split('-').map(Number), 1).toLocaleString('en', { month: 'long', year: 'numeric' }) : '';
+                        const eLabel = rawPeriod.endMonth ? new Date(...rawPeriod.endMonth.split('-').map(Number), 1).toLocaleString('en', { month: 'long', year: 'numeric' }) : '';
+                        periodLabel = `${sLabel} → ${eLabel}`;
+                    }
+                } else if (typeVal === 'yearly') {
+                    rawPeriod.startYear = wizard.inputs.yearStart.value;
+                    periodLabel = `${rawPeriod.startYear} → ${new Date().getFullYear()}`;
+                } else {
+                    periodLabel = '(unknown)';
+                }
+
+                const confirmMsg = `Generate a ${typeVal} report for ${scopeVal} — ${periodLabel}?`;
+                const confirmed = await modalConfirm(confirmMsg);
+                if (!confirmed) return;
+
+                const newReport = {
+                    id: Date.now(),
+                    name: `${typeVal.charAt(0).toUpperCase() + typeVal.slice(1)} Report - ${scopeVal} - ${periodLabel}`,
+                    type: typeVal,
+                    period: periodLabel,
+                    rawPeriod: rawPeriod,
+                    scope: scopeVal
+                };
+                reports.push(newReport);
+                renderReports();
+
+                hideOverlay(wizard.overlay);
+                await modalAlert('Report generated! Preparing PDF download...');
+                generatePDF(newReport);
+            });
+
+            wizard.backBtn.addEventListener('click', () => {
+                if (stepIndex > 0) stepIndex--;
+                updateWizardUI();
+            });
+            wizard.cancelBtn.addEventListener('click', async () => {
+                const c = await modalConfirm('Cancel report creation? All selections will be lost.');
+                if (c) hideOverlay(wizard.overlay);
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (appModal.classList.contains('active')) {
+                        hideOverlay(appModal);
+                    }
+                    if (simpleModal.classList.contains('active')) {
+                        hideOverlay(simpleModal);
+                    }
+                }
+            });
+
+            reportsList.addEventListener('click', async (e) => {
+                const id = parseInt(e.target.dataset.id);
+                if (!id) return;
+                const report = reports.find(r => r.id === id);
+                if (!report) return;
+
+                if (e.target.classList.contains('download-btn')) {
+                    await modalAlert('Preparing PDF...');
+                    generatePDF(report);
+                } else if (e.target.classList.contains('edit-btn')) {
+                    const newName = await editReportName(report.name);
+                    if (newName && newName !== report.name) {
+                        report.name = newName;
+                        renderReports();
+                        await modalAlert('Report updated successfully!');
+                    }
+                } else if (e.target.classList.contains('delete-btn')) {
+                    const confirmed = await modalConfirm('Are you sure you want to delete this report?');
+                    if (confirmed) {
+                        reports = reports.filter(r => r.id !== id);
+                        renderReports();
+                        await modalAlert('Report deleted successfully!');
+                    }
+                }
+            });
+
+            function editReportName(currentName = '') {
+                return new Promise(resolve => {
+                    const container = simple.msgEl;
+                    container.innerHTML = '';
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = currentName;
+                    input.style.width = '100%';
+                    input.style.padding = '0.5rem';
+                    input.style.borderRadius = '8px';
+                    input.style.border = '1px solid #d3dce1';
+                    container.appendChild(input);
+                    simple.titleEl.textContent = 'Edit report name';
+                    simple.okBtn.textContent = 'Save';
+                    simple.cancelBtn.textContent = 'Cancel';
+                    simple.cancelBtn.style.display = 'inline-block';
+
+                    showOverlay(simple.overlay);
+
+                    function cleanup(result) {
+                        simple.okBtn.removeEventListener('click', okHandler);
+                        simple.cancelBtn.removeEventListener('click', cancelHandler);
+                        hideOverlay(simple.overlay);
+                        container.innerHTML = '';
+                        simple.msgEl = document.getElementById('simple-modal-message');
+                        resolve(result);
+                    }
+                    function okHandler() {
+                        cleanup(input.value.trim());
+                    }
+                    function cancelHandler() { cleanup(false); }
+
+                    simple.okBtn.addEventListener('click', okHandler);
+                    simple.cancelBtn.addEventListener('click', cancelHandler);
+
+                    setTimeout(() => input.focus(), 50);
+                });
+            }
+            document.addEventListener('DOMContentLoaded', () => {
+                renderReports();
+            });
+
+        </script>
+    </body>
+</html>
